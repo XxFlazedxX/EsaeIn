@@ -1,0 +1,132 @@
+local player = game.Players.LocalPlayer
+local runService = game:GetService("RunService")
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "FlazedMenu"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 150)
+frame.Position = UDim2.new(0, 30, 0, 150)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Active = true
+frame.Draggable = true
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+-- Label
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, 0, 0, 20)
+label.Position = UDim2.new(0, 0, 0, 0)
+label.BackgroundTransparency = 1
+label.Text = "˜”*°•.˜”*°• Made By Flazed •°*”˜.•°*”˜"
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Font = Enum.Font.Gotham
+label.TextSize = 12
+label.Parent = frame
+
+-- Pull/Throw Button
+local pulling = false
+local pulledOnce = false
+local macroBtn = Instance.new("TextButton")
+macroBtn.Size = UDim2.new(0.9, 0, 0, 30)
+macroBtn.Position = UDim2.new(0.05, 0, 0, 30)
+macroBtn.Text = "Throw: OFF"
+macroBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+macroBtn.TextColor3 = Color3.new(1, 1, 1)
+macroBtn.Font = Enum.Font.Gotham
+macroBtn.TextSize = 15
+macroBtn.BorderSizePixel = 0
+macroBtn.Parent = frame
+
+macroBtn.MouseButton1Click:Connect(function()
+	pulling = not pulling
+	pulledOnce = pulling or pulledOnce
+	macroBtn.Text = pulling and "Pull: ON" or "Throw: OFF"
+end)
+
+-- Get rope
+local function getRope()
+	local ropesFolder = workspace:FindFirstChild("Ropes")
+	if not ropesFolder then return nil end
+	local userRope = ropesFolder:FindFirstChild(player.Name)
+	if not userRope then return nil end
+	return userRope:FindFirstChild("mainConnectionRope")
+end
+
+-- EaseIn
+local isEaseInActive = false
+local speed = 10 -- studs per second
+
+local easeInBtn = Instance.new("TextButton")
+easeInBtn.Size = UDim2.new(0.9, 0, 0, 30)
+easeInBtn.Position = UDim2.new(0.05, 0, 0, 70)
+easeInBtn.Text = "EaseIn: OFF"
+easeInBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+easeInBtn.TextColor3 = Color3.new(1, 1, 1)
+easeInBtn.Font = Enum.Font.Gotham
+easeInBtn.TextSize = 15
+easeInBtn.BorderSizePixel = 0
+easeInBtn.Parent = frame
+
+easeInBtn.MouseButton1Click:Connect(function()
+	isEaseInActive = not isEaseInActive
+	easeInBtn.Text = isEaseInActive and "EaseIn: ON" or "EaseIn: OFF"
+
+	local rope = getRope()
+	if rope and isEaseInActive then
+		rope.Length = 40
+	end
+end)
+
+-- Kill Button (replacing EaseOut)
+local killBtn = Instance.new("TextButton")
+killBtn.Size = UDim2.new(0.6, 0, 0, 25)
+killBtn.Position = UDim2.new(0.2, 0, 0, 110)
+killBtn.Text = "Kill: OFF"
+killBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+killBtn.TextColor3 = Color3.new(1, 1, 1)
+killBtn.Font = Enum.Font.Gotham
+killBtn.TextSize = 13
+killBtn.BorderSizePixel = 0
+killBtn.Parent = frame
+
+local killing = false
+killBtn.MouseButton1Click:Connect(function()
+	killing = not killing
+	killBtn.Text = killing and "Kill: ON" or "Kill: OFF"
+
+	local dmg = workspace:FindFirstChild("Pit") and workspace.Pit:FindFirstChild("Damage")
+	if dmg then
+		dmg.Size = killing and Vector3.new(2e8, 2e8, 2e8) or Vector3.new(0, 0, 0)
+	end
+
+	for _, v in pairs(player.Character:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.CanTouch = not killing
+			v.CanCollide = not killing
+		end
+	end
+end)
+
+-- Main loop
+runService.RenderStepped:Connect(function(dt)
+	local rope = getRope()
+	if rope then
+		if isEaseInActive then
+			rope.Length = math.max(rope.Length - speed * dt, 5)
+			if rope.Length <= 5 then
+				isEaseInActive = false
+				easeInBtn.Text = "EaseIn: OFF"
+			end
+		else
+			if pulling then
+				rope.Length = 5
+			elseif pulledOnce then
+				rope.Length = 1000000000000
+			end
+		end
+	end
+end)
