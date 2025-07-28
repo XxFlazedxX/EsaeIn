@@ -58,7 +58,7 @@ end
 
 -- EaseIn
 local isEaseInActive = false
-local speed = 10 -- studs per second
+local speed = 25 -- studs per second
 
 local easeInBtn = Instance.new("TextButton")
 easeInBtn.Size = UDim2.new(0.9, 0, 0, 30)
@@ -77,7 +77,7 @@ easeInBtn.MouseButton1Click:Connect(function()
 
 	local rope = getRope()
 	if rope and isEaseInActive then
-		rope.Length = 60
+		rope.Length = 50
 	end
 end)
 
