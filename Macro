@@ -77,7 +77,7 @@ easeInBtn.MouseButton1Click:Connect(function()
 
 	local rope = getRope()
 	if rope and isEaseInActive then
-		rope.Length = 40
+		rope.Length = 60
 	end
 end)
 
