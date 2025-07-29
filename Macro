@@ -1,5 +1,6 @@
 local player = game.Players.LocalPlayer
 local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
 
 -- GUI
 local gui = Instance.new("ScreenGui")
@@ -31,13 +32,11 @@ label.Parent = frame
 local pulling = false
 local pulledOnce = false
 local macroBtn = Instance.new("TextButton")
-macroBtn.Size = UDim2.new(0.9, 0, 0, 30)
 macroBtn.Position = UDim2.new(0.05, 0, 0, 30)
 macroBtn.Text = "Throw: OFF"
 macroBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 macroBtn.TextColor3 = Color3.new(1, 1, 1)
 macroBtn.Font = Enum.Font.Gotham
-macroBtn.TextSize = 15
 macroBtn.BorderSizePixel = 0
 macroBtn.Parent = frame
 
@@ -58,38 +57,33 @@ end
 
 -- EaseIn
 local isEaseInActive = false
-local speed = 25 -- studs per second
+local speed = 27
 
 local easeInBtn = Instance.new("TextButton")
-easeInBtn.Size = UDim2.new(0.9, 0, 0, 30)
 easeInBtn.Position = UDim2.new(0.05, 0, 0, 70)
 easeInBtn.Text = "EaseIn: OFF"
 easeInBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 easeInBtn.TextColor3 = Color3.new(1, 1, 1)
 easeInBtn.Font = Enum.Font.Gotham
-easeInBtn.TextSize = 15
 easeInBtn.BorderSizePixel = 0
 easeInBtn.Parent = frame
 
 easeInBtn.MouseButton1Click:Connect(function()
 	isEaseInActive = not isEaseInActive
 	easeInBtn.Text = isEaseInActive and "EaseIn: ON" or "EaseIn: OFF"
-
 	local rope = getRope()
 	if rope and isEaseInActive then
 		rope.Length = 50
 	end
 end)
 
--- Kill Button (replacing EaseOut)
+-- Kill Button
 local killBtn = Instance.new("TextButton")
-killBtn.Size = UDim2.new(0.6, 0, 0, 25)
 killBtn.Position = UDim2.new(0.2, 0, 0, 110)
 killBtn.Text = "Kill: OFF"
 killBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 killBtn.TextColor3 = Color3.new(1, 1, 1)
 killBtn.Font = Enum.Font.Gotham
-killBtn.TextSize = 13
 killBtn.BorderSizePixel = 0
 killBtn.Parent = frame
 
@@ -111,7 +105,51 @@ killBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Main loop
+-- Resize Handle
+local resize = Instance.new("TextButton")
+resize.Size = UDim2.new(0, 16, 0, 16)
+resize.Position = UDim2.new(1, -4, 1, -4)
+resize.AnchorPoint = Vector2.new(1, 1)
+resize.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+resize.Text = ""
+resize.BorderSizePixel = 0
+resize.Parent = frame
+
+-- Resize Logic
+local resizing = false
+local startSize, startPos
+resize.MouseButton1Down:Connect(function()
+	resizing = true
+	startSize = frame.AbsoluteSize
+	startPos = Vector2.new(player:GetMouse().X, player:GetMouse().Y)
+	frame.Draggable = false
+end)
+
+userInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		resizing = false
+		frame.Draggable = true
+	end
+end)
+
+-- Base size reference
+local baseSize = Vector2.new(250, 150)
+local function updateScale()
+	local scaleX = frame.AbsoluteSize.X / baseSize.X
+	local scaleY = frame.AbsoluteSize.Y / baseSize.Y
+	local scale = math.min(scaleX, scaleY)
+
+	macroBtn.TextSize = 15 * scale
+	easeInBtn.TextSize = 15 * scale
+	killBtn.TextSize = 13 * scale
+	label.TextSize = 12 * scale
+
+	macroBtn.Size = UDim2.new(0.9, 0, 0, 30 * scale)
+	easeInBtn.Size = UDim2.new(0.9, 0, 0, 30 * scale)
+	killBtn.Size = UDim2.new(0.6, 0, 0, 25 * scale)
+end
+
+-- Main Loop
 runService.RenderStepped:Connect(function(dt)
 	local rope = getRope()
 	if rope then
@@ -129,4 +167,13 @@ runService.RenderStepped:Connect(function(dt)
 			end
 		end
 	end
+
+	if resizing then
+		local delta = Vector2.new(player:GetMouse().X, player:GetMouse().Y) - startPos
+		frame.Size = UDim2.new(0, math.max(50, startSize.X + delta.X), 0, math.max(50, startSize.Y + delta.Y))
+		updateScale()
+	end
 end)
+
+updateScale()
+
